@@ -1,68 +1,115 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
-  // Mock data for now
-  private users = [
-    { id: 1, name: 'John Doe', email: 'john@example.com' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
-  ];
+  constructor(private prisma: PrismaService) {}
 
-  findAll() {
+  async findAll() {
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+        // Don't include password in the response
+      },
+    });
     return {
       message: 'All users retrieved successfully',
-      data: this.users,
+      data: users,
     };
   }
 
-  findOne(id: number) {
-    const user = this.users.find((user) => user.id === id);
+  async findOne(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+        // Don't include password in the response
+      },
+    });
     return {
       message: user ? 'User found' : 'User not found',
       data: user || null,
     };
   }
 
-  create(createUserDto: CreateUserDto) {
-    const newUser = {
-      id: this.users.length + 1,
-      ...createUserDto,
-    };
-    this.users.push(newUser);
+  async create(createUserDto: CreateUserDto) {
+    const newUser = await this.prisma.user.create({
+      data: {
+        ...createUserDto,
+        password: 'temp_password', // TODO: Hash password properly
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+        // Don't include password in the response
+      },
+    });
     return {
       message: 'User created successfully',
       data: newUser,
     };
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id },
+        data: updateUserDto,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true,
+          updatedAt: true,
+          // Don't include password in the response
+        },
+      });
+      return {
+        message: 'User updated successfully',
+        data: updatedUser,
+      };
+    } catch {
       return {
         message: 'User not found',
         data: null,
       };
     }
-    this.users[userIndex] = { ...this.users[userIndex], ...updateUserDto };
-    return {
-      message: 'User updated successfully',
-      data: this.users[userIndex],
-    };
   }
 
-  remove(id: number) {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) {
+  async remove(id: number) {
+    try {
+      const deletedUser = await this.prisma.user.delete({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true,
+          updatedAt: true,
+          // Don't include password in the response
+        },
+      });
+      return {
+        message: 'User deleted successfully',
+        data: deletedUser,
+      };
+    } catch {
       return {
         message: 'User not found',
         data: null,
       };
     }
-    const deletedUser = this.users.splice(userIndex, 1)[0];
-    return {
-      message: 'User deleted successfully',
-      data: deletedUser,
-    };
   }
 }
