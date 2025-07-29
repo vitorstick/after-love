@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
-  async register(registerDto: any) {
+  register(registerDto: RegisterDto) {
     // TODO: Implement user registration logic
     return {
       message: 'User registration endpoint',
@@ -10,7 +12,7 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: any) {
+  login(loginDto: LoginDto) {
     // TODO: Implement user login logic
     return {
       message: 'User login endpoint',
@@ -18,7 +20,7 @@ export class AuthService {
     };
   }
 
-  async getProfile() {
+  getProfile() {
     // TODO: Implement get user profile logic
     return {
       message: 'User profile endpoint',
