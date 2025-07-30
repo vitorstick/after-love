@@ -7,7 +7,10 @@ import {
   Patch,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthenticatedUser, CurrentUser } from '../auth/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   CreateUserDto,
   UpdatePasswordDto,
@@ -50,5 +53,11 @@ export class UsersController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  @Get('me/partner-status')
+  @UseGuards(JwtAuthGuard)
+  async getMyPartnerStatus(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.getPartnerStatus(user.id);
   }
 }
