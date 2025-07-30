@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
@@ -42,11 +43,20 @@ export class UsersService {
     };
   }
 
+  // Note: For user registration, use the AuthService.register() method instead
+  // This method is for admin/system use only
   async create(createUserDto: CreateUserDto) {
+    // Hash a placeholder password - users created this way should reset their password
+    const saltRounds = 12;
+    const placeholderPasswordHash = await bcrypt.hash(
+      'SYSTEM_USER_' + Date.now(),
+      saltRounds,
+    );
+
     const newUser = await this.prisma.user.create({
       data: {
         ...createUserDto,
-        passwordHash: 'temp_password', // TODO: Hash password properly
+        passwordHash: placeholderPasswordHash,
       },
       select: {
         id: true,
@@ -59,7 +69,7 @@ export class UsersService {
       },
     });
     return {
-      message: 'User created successfully',
+      message: 'User created successfully (password must be set via auth flow)',
       data: newUser,
     };
   }
@@ -75,12 +85,38 @@ export class UsersService {
           name: true,
           createdAt: true,
           updatedAt: true,
+          coupleId: true,
           // Don't include password in the response
         },
       });
       return {
         message: 'User updated successfully',
         data: updatedUser,
+      };
+    } catch {
+      return {
+        message: 'User not found',
+        data: null,
+      };
+    }
+  }
+
+  // Method to securely update user password (admin use)
+  async updatePassword(id: string, newPassword: string) {
+    try {
+      const saltRounds = 12;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      await this.prisma.user.update({
+        where: { id },
+        data: {
+          passwordHash: hashedPassword,
+        },
+      });
+
+      return {
+        message: 'Password updated successfully',
+        data: { id },
       };
     } catch {
       return {
