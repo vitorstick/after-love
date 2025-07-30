@@ -23,7 +23,7 @@ export class UsersService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -32,6 +32,7 @@ export class UsersService {
         name: true,
         createdAt: true,
         updatedAt: true,
+        coupleId: true,
         // Don't include password in the response
       },
     });
@@ -45,7 +46,7 @@ export class UsersService {
     const newUser = await this.prisma.user.create({
       data: {
         ...createUserDto,
-        password: 'temp_password', // TODO: Hash password properly
+        passwordHash: 'temp_password', // TODO: Hash password properly
       },
       select: {
         id: true,
@@ -53,6 +54,7 @@ export class UsersService {
         name: true,
         createdAt: true,
         updatedAt: true,
+        coupleId: true,
         // Don't include password in the response
       },
     });
@@ -62,7 +64,7 @@ export class UsersService {
     };
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto) {
     try {
       const updatedUser = await this.prisma.user.update({
         where: { id },
@@ -88,7 +90,7 @@ export class UsersService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     try {
       const deletedUser = await this.prisma.user.delete({
         where: { id },
@@ -98,6 +100,7 @@ export class UsersService {
           name: true,
           createdAt: true,
           updatedAt: true,
+          coupleId: true,
           // Don't include password in the response
         },
       });
