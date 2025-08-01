@@ -9,4 +9,14 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('health')
+  getHealth() {
+    return {
+      status: 'ok',
+      message: 'After Love API is running',
+      timestamp: new Date().toISOString(),
+      cors: 'enabled',
+    };
+  }
 }

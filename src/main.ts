@@ -18,13 +18,42 @@ async function bootstrap() {
     }),
   );
 
+  // Enhanced CORS configuration for development
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001',
+      // Add your actual frontend URL if different
+      configService.get<string>('FRONTEND_URL') || 'http://localhost:3000',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
+
   // Set global API prefix
   app.setGlobalPrefix('api');
 
   // Get port from configuration
-  const port = configService.get<number>('port') || 8000;
+  const port = configService.get<number>('PORT') || 8000;
+  const frontendUrl =
+    configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
 
   await app.listen(port);
   console.log(`🚀 Application is running on: http://localhost:${port}/api`);
+  console.log(`📡 CORS enabled for: ${frontendUrl}`);
+  console.log(
+    `🔧 Environment: ${configService.get<string>('NODE_ENV') || 'development'}`,
+  );
 }
 bootstrap().catch((err) => console.error('Error starting application:', err));
