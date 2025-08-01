@@ -151,4 +151,107 @@ export class UsersService {
       };
     }
   }
+
+  async getPartnerStatus(userId: string) {
+    try {
+      // First, check if user exists and get their couple info
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          couple: {
+            include: {
+              partner1: {
+                select: { id: true, name: true, email: true },
+              },
+              partner2: {
+                select: { id: true, name: true, email: true },
+              },
+              invitation: true,
+            },
+          },
+          invitationsSent: {
+            where: {
+              status: {
+                in: ['PENDING', 'ACCEPTED'],
+              },
+            },
+            include: {
+              couple: {
+                include: {
+                  partner2: {
+                    select: { id: true, name: true, email: true },
+                  },
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
+        },
+      });
+
+      if (!user) {
+        return {
+          message: 'User not found',
+          data: null,
+        };
+      }
+
+      // Check if user is already in a couple with a partner
+      if (user.couple && user.couple.partner2Id) {
+        const partner =
+          user.couple.partner1Id === userId
+            ? user.couple.partner2
+            : user.couple.partner1;
+
+        return {
+          message: 'Partner status retrieved successfully',
+          data: {
+            hasPartner: true,
+            hasInvitation: false,
+            invitationStatus: 'ACCEPTED' as const,
+            partnerName: partner?.name || 'Unknown',
+          },
+        };
+      }
+
+      // Check if user has sent an invitation
+      if (user.invitationsSent.length > 0) {
+        const invitation = user.invitationsSent[0];
+
+        return {
+          message: 'Partner status retrieved successfully',
+          data: {
+            hasPartner: false,
+            hasInvitation: true,
+            invitationStatus: invitation.status as
+              | 'PENDING'
+              | 'ACCEPTED'
+              | 'EXPIRED'
+              | 'CANCELLED',
+            invitedEmail: invitation.invitedEmail,
+            invitationCreatedAt: invitation.createdAt,
+            invitationExpiresAt: invitation.expiresAt,
+            partnerName: invitation.couple.partner2?.name,
+          },
+        };
+      }
+
+      // No partner or invitation
+      return {
+        message: 'Partner status retrieved successfully',
+        data: {
+          hasPartner: false,
+          hasInvitation: false,
+        },
+      };
+    } catch {
+      return {
+        message: 'Error retrieving partner status',
+        data: null,
+      };
+    }
+  }
 }
